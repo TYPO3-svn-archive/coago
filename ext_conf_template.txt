@@ -1,0 +1,4 @@
+  # cat=basic//70; type=text; label= clear all cached cObj on this table changes: Comma separated list of tables which when changed will delete all cached object (NOT yet implemented)
+clearOnTablesChange = pages
+  # cat=basic//70; type=text; label= cached cObj directory: With ending slash.
+cacheDirectory = typo3temp/cached_cobj/
