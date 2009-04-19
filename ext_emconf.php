@@ -3,7 +3,7 @@
 ########################################################################
 # Extension Manager/Repository config file for ext: "coago"
 #
-# Auto generated 05-04-2009 19:23
+# Auto generated 19-04-2009 23:22
 #
 # Manual updates:
 # Only the data in the array - anything else is removed by next write.
@@ -15,7 +15,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'description' => 'This extension improves caching of content objects in TYPO3 so it can increase time rendering of page and overall performance of your site. Tags: COA_CACHED, COA_INT_CACHED, COA_INT_CACHED_AJAX',
 	'category' => 'fe',
 	'shy' => 0,
-	'version' => '0.1.1',
+	'version' => '0.1.2',
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => '',
@@ -41,6 +41,9 @@ $EM_CONF[$_EXTKEY] = array(
 		'suggests' => array(
 		),
 	),
+	'suggests' => array(
+	),
+	'_md5_values_when_last_written' => 'a:7:{s:18:"class.tx_coago.php";s:4:"95f2";s:30:"class.tx_coago_tcemainproc.php";s:4:"257b";s:21:"ext_conf_template.txt";s:4:"b896";s:17:"ext_localconf.php";s:4:"a327";s:10:"readme.txt";s:4:"2f6f";s:17:"readme_coa_go.gif";s:4:"8e4c";s:14:"doc/manual.sxw";s:4:"cffc";}',
 );
 
 ?>
