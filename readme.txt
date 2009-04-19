@@ -1,5 +1,5 @@
-USE like this:
 
+USE like this:
 
 temp.a1 = COA_GO
 temp.a1.cache.type = afterCache_file
@@ -11,7 +11,7 @@ where
 a) "type" can be one of the following:
    1) beforeCache_db
    2) afterCache_file
-   3) ajax_file
+   3) afterCache_file_ajax
    
 b) "period" - time in second the cache expires
 
