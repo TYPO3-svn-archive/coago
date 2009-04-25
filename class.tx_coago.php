@@ -118,12 +118,15 @@ class tx_coago {
 
 							$contentToStore = $this->getCOA_GO($conf);
 
-							$cacheChecks = '<?php
-                     			$ageInSeconds = time() - filemtime(\''.$absolutePathTempWithFilename.'\');
-                     			if( ($ageInSeconds > '.$cachePeriod.') && '.$cachePeriod.' ){
-                     			t3lib_div::getURL(\''. t3lib_div::getIndpEnv('TYPO3_SITE_URL') . 'index.php?id='. $GLOBALS['TSFE']->id .'&no_cache=1\');
-                     			} ?>'. "\n\n";
-
+							if( $cachePeriod ) {
+								$cacheChecks = '<?php
+	                     			$ageInSeconds = time() - filemtime(\''.$absolutePathTempWithFilename.'\');
+	                     			if( ($ageInSeconds > '.$cachePeriod.') && '.$cachePeriod.' ){
+	                     			t3lib_div::getURL(\''. t3lib_div::getIndpEnv('TYPO3_SITE_URL') . 'index.php?id='. $GLOBALS['TSFE']->id .'&no_cache=1\');
+	                     			} ?>'. "\n\n";
+								$contentToStore = $cacheChecks . $contentToStore;
+							}
+							
 							$contentToStore = $cacheChecks . $contentToStore;
 							$fileStatus = t3lib_div::writeFileToTypo3tempDir($absolutePathTempWithFilename, $contentToStore);
 							if ($fileStatus)t3lib_div::devLog('Error writing afterCache_file: '.$fileStatus, $this->extKey, 3);
