@@ -102,14 +102,18 @@ class tx_coago {
 
 						// there sould be way to integrate cachePeriod here
 						$GLOBALS["TSFE"]->config["EXTincScript"][$substKey] = array(
-                     "file" => $absolutePathTempWithFilename,
+                     		"file" => $absolutePathTempWithFilename,
 						);
 
-						// cObject not yet cached in file or cachePeriod expired? So generate and store in files.
-
-
-						$ageInSeconds = time() - filemtime($absolutePathTempWithFilename);
-						if(! file_exists($absolutePathTempWithFilename)
+						// cObject not yet cached in file or cache period expired? So generate and store in files.					
+						if( file_exists($absolutePathTempWithFilename) ) {
+							$cachedFileExist = TRUE;
+							$ageInSeconds = time() - filemtime($absolutePathTempWithFilename);
+						}else {
+							$cachedFileExist = FALSE;
+						}
+						
+						if(! $cachedFileExist
 						||  ( $cachePeriod && ($ageInSeconds > $cachePeriod)) ){
 
 							$contentToStore = $this->getCOA_GO($conf);
@@ -206,9 +210,16 @@ class tx_coago {
 
 						self::$counter++;
 
-						$ageInSeconds = time() - filemtime($absolutePathTempWithFilename);
-						if(! file_exists($absolutePathTempWithFilename)
-						||  ( ($ageInSeconds > $cachePeriod) && $cachePeriod) ){
+						// cObject not yet cached in file or cache period expired? So generate and store in files.					
+						if( file_exists($absolutePathTempWithFilename) ) {
+							$cachedFileExist = TRUE;
+							$ageInSeconds = time() - filemtime($absolutePathTempWithFilename);
+						}else {
+							$cachedFileExist = FALSE;
+						}
+						
+						if(! $cachedFileExist
+						||  ( $cachePeriod && ($ageInSeconds > $cachePeriod)) ){
 
 							$contentToStore = $this->getCOA_GO($conf);
 
