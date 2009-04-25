@@ -42,9 +42,10 @@ class tx_coago {
 			case "COA_GO":
 
 				// Get variables into shorter names.
-				$hash = $conf['cache.']['hash'];
-				$cachePeriod = intval($conf['cache.']['period']);
-				$cacheType = $conf['cache.']['type'];
+				$hash = $this->cObj->stdWrap($conf['cache.']['hash'], $conf['cache.']['hash.']);
+				$cachePeriod = intval($this->cObj->stdWrap($conf['cache.']['period'], $conf['cache.']['period.']));
+				$cacheType = $this->cObj->stdWrap($conf['cache.']['type'], $conf['cache.']['type.']);
+
 				if( !$hash ) {
 					$hash = md5( serialize($conf) );
 				}
@@ -104,7 +105,9 @@ class tx_coago {
                      "file" => $absolutePathTempWithFilename,
 						);
 
-						// cObject not yet cached or cache or cachePeriod? So generate and store in files.
+						// cObject not yet cached in file or cachePeriod expired? So generate and store in files.
+
+
 						$ageInSeconds = time() - filemtime($absolutePathTempWithFilename);
 						if(! file_exists($absolutePathTempWithFilename)
 						||  ( $cachePeriod && ($ageInSeconds > $cachePeriod)) ){
