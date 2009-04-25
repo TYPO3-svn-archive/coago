@@ -271,11 +271,10 @@ http_req_{$counter}_r2.open('POST','{$siteUrl}{$relativePathTemp}{$cacheHash}',t
 	function getCOA_GO($conf) {
 
 		// standard COA
-		$contentToStore = $this->cObj->cObjGet($conf);
 		if ( $this->cObj->checkIf($conf['if.']) )	{
 			$contentToStore = $this->cObj->cObjGet($conf);
 			if ( $conf['wrap'] ) {
-				//$contentToStore = $this->cObj->wrap($contentToStore, $conf['wrap']);
+				$contentToStore = $this->cObj->wrap($contentToStore, $conf['wrap']);
 			}
 			if ( $conf['stdWrap.'] ) {
 				$contentToStore = $this->cObj->stdWrap($contentToStore, $conf['stdWrap.']);
