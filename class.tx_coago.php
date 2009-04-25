@@ -42,17 +42,27 @@ class tx_coago {
 			case "COA_GO":
 
 				// Get variables into shorter names.
-				$hash = $this->cObj->stdWrap($conf['cache.']['hash'], $conf['cache.']['hash.']);
-				$cachePeriod = intval($this->cObj->stdWrap($conf['cache.']['period'], $conf['cache.']['period.']));
-				$cacheType = $this->cObj->stdWrap($conf['cache.']['type'], $conf['cache.']['type.']);
-
-				if( !$hash ) {
-					$hash = md5( serialize($conf) );
+				
+				$cacheHash = $this->cObj->stdWrap($conf['cache.']['hash'], $conf['cache.']['hash.']);
+				// set default $cacheHash
+				if( !$cacheHash ) {
+					$cacheHash = md5( serialize($conf) );
 				}
+				
+				$cacheType = $this->cObj->stdWrap($conf['cache.']['type'], $conf['cache.']['type.']);
+				// set default cacheType
+				if( ! strlen($cacheType) ) {
+					$cacheType = 'beforeCache_db';
+				}
+				
+				$cachePeriod = intval($this->cObj->stdWrap($conf['cache.']['period'], $conf['cache.']['period.']));
+				
+
+
 
 				// Set pathes.
 				$confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]);
-				$filename = $hash;
+				$filename = $cacheHash;
 				$relativePathTemp =  $confArr['cacheDirectory'];
 				$absolutePathTemp = PATH_site . $relativePathTemp;
 				$absolutePathTempWithFilename = $absolutePathTemp . $filename;
@@ -63,13 +73,13 @@ class tx_coago {
 					case 'beforeCache_db':
 
 						// Get cached COA_GO content.
-						$content = $GLOBALS['TSFE']->sys_page->getHash($hash, $cachePeriod);
+						$content = $GLOBALS['TSFE']->sys_page->getHash($cacheHash, $cachePeriod);
 
 						// Not yet cached? So generate nad store in cache_hash.
 						if ( !strlen($content) ) {
 
 							$content = $this->getCOA_GO($conf);
-							$GLOBALS['TSFE']->sys_page->storeHash($hash, $content, 'COA_GO');
+							$GLOBALS['TSFE']->sys_page->storeHash($cacheHash, $content, 'COA_GO');
 
 						}
 
@@ -160,7 +170,7 @@ class tx_coago {
                         http_req_{$counter} = new XMLHttpRequest();
                      }
 
-                     http_req_{$counter}.open('GET', '{$siteUrl}{$relativePathTemp}{$hash}',true);
+                     http_req_{$counter}.open('GET', '{$siteUrl}{$relativePathTemp}{$cacheHash}',true);
                      http_req_{$counter}.send(null);
                      http_req_{$counter}.onreadystatechange=function() {
                         if(http_req_{$counter}.readyState == 4) {
@@ -193,7 +203,7 @@ class tx_coago {
                                        http_req_{$counter}_r2 = new XMLHttpRequest();
                                     }
 
-                                    http_req_{$counter}_r2.open('GET', '{$siteUrl}{$relativePathTemp}{$hash}',true);
+                                    http_req_{$counter}_r2.open('GET', '{$siteUrl}{$relativePathTemp}{$cacheHash}',true);
                                     http_req_{$counter}_r2.send(null);
                                     http_req_{$counter}_r2.onreadystatechange=function() {
 
