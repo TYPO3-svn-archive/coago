@@ -28,6 +28,7 @@
 class tx_coago {
 
 	private $extKey = 'coago';
+	private $defaultCacheDirectory = 'typo3temp/cached_cobj/';
 	private static $counter = 1;
 
 	function cObjGetSingleExt($name, $conf, $TSkey, &$cObj) {
@@ -62,6 +63,11 @@ class tx_coago {
 
 				// Set pathes.
 				$confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]);
+
+				if( !$confArr['cacheDirectory'] ) {
+					$confArr['cacheDirectory'] = $this->defaultCacheDirectory;
+				}
+
 				$filename = $cacheHash;
 				$relativePathTemp =  $confArr['cacheDirectory'];
 				$absolutePathTemp = PATH_site . $relativePathTemp;
@@ -221,8 +227,6 @@ class tx_coago {
                   </script>
                   ";
 
-						self::$counter++;
-
 						// cObject not yet cached in file or cache period expired? So generate and store in files.					
 						if( file_exists($absolutePathTempWithFilename) ) {
 							$cachedFileExist = TRUE;
@@ -248,7 +252,8 @@ class tx_coago {
 				break;
 
 		}
-
+		
+		self::$counter++;
 		return $content;
 	}
 
