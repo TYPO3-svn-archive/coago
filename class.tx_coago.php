@@ -162,68 +162,78 @@ class tx_coago {
 						$counter = self::$counter;
 						$cachePeriod = $cachePeriod?$cachePeriod : '0';
 						$siteUrl = t3lib_div::getIndpEnv('TYPO3_SITE_URL');
+/*
+$script = "
+var http_req_{$counter} = false;
+if( navigator.appName === 'Microsoft Internet Explorer' ) {
+	http_req_{$counter} = new ActiveXObject('Microsoft.XMLHTTP');
+ } else {
+	http_req_{$counter} = new XMLHttpRequest();
+ }
 
-						$content .= "
-                  <div id='ncc-{$counter}'> </div>
-                  <script type='text/javascript'>
-                     var http_req_{$counter} = false;
-                     if(navigator.appName == 'Microsoft Internet Explorer') {
-                        http_req_{$counter} = new ActiveXObject('Microsoft.XMLHTTP');
-                     } else {
-                        http_req_{$counter} = new XMLHttpRequest();
-                     }
+ http_req_{$counter}.open('POST', '{$siteUrl}{$relativePathTemp}{$cacheHash}',true);
+ http_req_{$counter}.send(null);
+ http_req_{$counter}.onreadystatechange=function() {
+	if( http_req_{$counter}.readyState === 4 ) {
 
-                     http_req_{$counter}.open('GET', '{$siteUrl}{$relativePathTemp}{$cacheHash}',true);
-                     http_req_{$counter}.send(null);
-                     http_req_{$counter}.onreadystatechange=function() {
-                        if(http_req_{$counter}.readyState == 4) {
+	   ageInSeconds = (new Date() - Date.parse(http_req_{$counter}.getResponseHeader('Last-Modified'))) / 1000;
 
-                           ageInSeconds = (new Date() - Date.parse(http_req_{$counter}.getResponseHeader('Last-Modified'))) / 1000;
+	   //alert('main condition:' + (http_req_{$counter}.status === 200) && ( (ageInSeconds < {$cachePeriod}) || ('{$cachePeriod}' === '0') ) + '<br /> counter :' +{$counter} + 'age cond :' + (ageInSeconds < {$cachePeriod}) + 'cache period: ' + {$cachePeriod} + 'ageinSec: ' + ageInSeconds);
 
-                           //alert('main condition:' + (http_req_{$counter}.status == 200) && ( (ageInSeconds < {$cachePeriod}) || ('{$cachePeriod}' == '0') ) + '<br /> counter :' +{$counter} + 'age cond :' + (ageInSeconds < {$cachePeriod}) + 'cache period: ' + {$cachePeriod} + 'ageinSec: ' + ageInSeconds);
+	   if( (http_req_{$counter}.status === 200) && ( (ageInSeconds < {$cachePeriod}) || ('{$cachePeriod}' === '0') ) ) {
+		  document.getElementById('ncc-{$counter}').innerHTML = http_req_{$counter}.responseText;
+	   } else {
 
-                           if( (http_req_{$counter}.status == 200) && ( (ageInSeconds < {$cachePeriod}) || ('{$cachePeriod}' == '0') ) ) {
-                              document.getElementById('ncc-{$counter}').innerHTML = http_req_{$counter}.responseText;
-                           } else {
+		  var http_req_{$counter}_r1 = false;
+		  if(navigator.appName === 'Microsoft Internet Explorer') {
+			 http_req_{$counter}_r1 = new ActiveXObject('Microsoft.XMLHTTP');
+		  } else {
+			 http_req_{$counter}_r1 = new XMLHttpRequest();
+		  }
 
-                              var http_req_{$counter}_r1 = false;
-                              if(navigator.appName == 'Microsoft Internet Explorer') {
-                                 http_req_{$counter}_r1 = new ActiveXObject('Microsoft.XMLHTTP');
-                              } else {
-                                 http_req_{$counter}_r1 = new XMLHttpRequest();
-                              }
+		  http_req_{$counter}_r1.open('POST', '{$siteUrl}index.php?id={$GLOBALS['TSFE']->id}&no_cache=1');
+		  http_req_{$counter}_r1.send(null);
 
-                              http_req_{$counter}_r1.open('GET', '{$siteUrl}index.php?id={$GLOBALS['TSFE']->id}&no_cache=1');
-                              http_req_{$counter}_r1.send(null);
+		  http_req_{$counter}_r1.onreadystatechange=function() {
+			 if( http_req_{$counter}_r1.readyState === 4 ) {
 
-                              http_req_{$counter}_r1.onreadystatechange=function() {
-                                 if(http_req_{$counter}_r1.readyState == 4) {
+				var http_req_{$counter}_r2 = false;
+				if(navigator.appName === 'Microsoft Internet Explorer') {
+				   http_req_{$counter}_r2 = new ActiveXObject('Microsoft.XMLHTTP');
+				} else {
+				   http_req_{$counter}_r2 = new XMLHttpRequest();
+				}
 
-                                    var http_req_{$counter}_r2 = false;
-                                    if(navigator.appName == 'Microsoft Internet Explorer') {
-                                       http_req_{$counter}_r2 = new ActiveXObject('Microsoft.XMLHTTP');
-                                    } else {
-                                       http_req_{$counter}_r2 = new XMLHttpRequest();
-                                    }
+				http_req_{$counter}_r2.open('POST', '{$siteUrl}{$relativePathTemp}{$cacheHash}',true);
+				http_req_{$counter}_r2.send(null);
+				http_req_{$counter}_r2.onreadystatechange=function() {
 
-                                    http_req_{$counter}_r2.open('GET', '{$siteUrl}{$relativePathTemp}{$cacheHash}',true);
-                                    http_req_{$counter}_r2.send(null);
-                                    http_req_{$counter}_r2.onreadystatechange=function() {
+				if( http_req_{$counter}_r2.readyState === 4 ) {
+					  if( http_req_{$counter}_r2.status === 200 ) {
+						 document.getElementById('ncc-{$counter}').innerHTML = http_req_{$counter}_r2.responseText;
+					  }
+				   }
+				};
+			 }
+		  };
+	   }
+	}
+};
+";
+*/
 
-                                    if(http_req_{$counter}_r2.readyState == 4) {
-                                          if(http_req_{$counter}_r2.status == 200) {
-                                             document.getElementById('ncc-{$counter}').innerHTML = http_req_{$counter}_r2.responseText;
-                                          };
-                                       }
-                                    }
-                                 };
-                              };
-                           };
-                        };
-                     };
-                  </script>
-                  ";
+						
+// packed script http://jscompress.com/
+$script = "var http_req_{$counter}=false;if(navigator.appName==='Microsoft Internet Explorer'){http_req_{$counter}=new ActiveXObject('Microsoft.XMLHTTP');}else{http_req_{$counter}=new XMLHttpRequest();}
+http_req_{$counter}.open('POST','{$siteUrl}{$relativePathTemp}{$cacheHash}',true);http_req_{$counter}.send(null);http_req_{$counter}.onreadystatechange=function(){if(http_req_{$counter}.readyState===4){ageInSeconds=(new Date()-Date.parse(http_req_{$counter}.getResponseHeader('Last-Modified')))/1000;if((http_req_{$counter}.status===200)&&((ageInSeconds<{$cachePeriod})||('{$cachePeriod}'==='0'))){document.getElementById('ncc-{$counter}').innerHTML=http_req_{$counter}.responseText;}else{var http_req_{$counter}_r1=false;if(navigator.appName==='Microsoft Internet Explorer'){http_req_{$counter}_r1=new ActiveXObject('Microsoft.XMLHTTP');}else{http_req_{$counter}_r1=new XMLHttpRequest();}
+http_req_{$counter}_r1.open('POST','{$siteUrl}index.php?id={$GLOBALS['TSFE']->id}&no_cache=1');http_req_{$counter}_r1.send(null);http_req_{$counter}_r1.onreadystatechange=function(){if(http_req_{$counter}_r1.readyState===4){var http_req_{$counter}_r2=false;if(navigator.appName==='Microsoft Internet Explorer'){http_req_{$counter}_r2=new ActiveXObject('Microsoft.XMLHTTP');}else{http_req_{$counter}_r2=new XMLHttpRequest();}
+http_req_{$counter}_r2.open('POST','{$siteUrl}{$relativePathTemp}{$cacheHash}',true);http_req_{$counter}_r2.send(null);http_req_{$counter}_r2.onreadystatechange=function(){if(http_req_{$counter}_r2.readyState===4){if(http_req_{$counter}_r2.status===200){document.getElementById('ncc-{$counter}').innerHTML=http_req_{$counter}_r2.responseText;}}};}};}}};
+";
 
+
+
+						$content .= "<div id='ncc-{$counter}'><script type='text/javascript'>$script</script></div>";
+						
 						// cObject not yet cached in file or cache period expired? So generate and store in files.
 						if( file_exists($absolutePathTempWithFilename) ) {
 							$cachedFileExist = TRUE;
