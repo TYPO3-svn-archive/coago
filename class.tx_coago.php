@@ -4,7 +4,7 @@
  * ************************************************************
  *  Copyright notice
  *
- *  (c) Krystian Szymukowicz (typo3@prolabium.com)
+ *  (c) Krystian Szymukowicz (http://www.prolabium.com)
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -43,22 +43,20 @@ class tx_coago {
 			case "COA_GO":
 
 				// Get variables into shorter names.
-				
+
 				$cacheHash = $this->cObj->stdWrap($conf['cache.']['hash'], $conf['cache.']['hash.']);
 				// set default $cacheHash
 				if( !$cacheHash ) {
 					$cacheHash = md5( serialize($conf) );
 				}
-				
+
 				$cacheType = $this->cObj->stdWrap($conf['cache.']['type'], $conf['cache.']['type.']);
 				// set default cacheType
 				if( ! strlen($cacheType) ) {
 					$cacheType = 'beforeCache_db';
 				}
-				
-				$cachePeriod = intval($this->cObj->stdWrap($conf['cache.']['period'], $conf['cache.']['period.']));
-				
 
+				$cachePeriod = intval($this->cObj->stdWrap($conf['cache.']['period'], $conf['cache.']['period.']));
 
 
 				// Set pathes.
@@ -81,7 +79,7 @@ class tx_coago {
 						// Get cached COA_GO content.
 						$content = $GLOBALS['TSFE']->sys_page->getHash($cacheHash, $cachePeriod);
 
-						// Not yet cached? So generate nad store in cache_hash.
+						// Not yet cached? So generate and store in cache_hash.
 						if ( !strlen($content) ) {
 
 							$content = $this->getCOA_GO($conf);
@@ -116,19 +114,18 @@ class tx_coago {
 						$substKey = "EXT_SCRIPT." . $GLOBALS['TSFE']->uniqueHash();
 						$content .= "<!--" . $substKey . "-->";
 
-						// there sould be way to integrate cachePeriod here
 						$GLOBALS["TSFE"]->config["EXTincScript"][$substKey] = array(
                      		"file" => $absolutePathTempWithFilename,
 						);
 
-						// cObject not yet cached in file or cache period expired? So generate and store in files.					
+						// cObject not yet cached in file or cache period expired? So generate and store in files.
 						if( file_exists($absolutePathTempWithFilename) ) {
 							$cachedFileExist = TRUE;
 							$ageInSeconds = time() - filemtime($absolutePathTempWithFilename);
 						}else {
 							$cachedFileExist = FALSE;
 						}
-						
+
 						if(! $cachedFileExist
 						||  ( $cachePeriod && ($ageInSeconds > $cachePeriod)) ){
 
@@ -142,7 +139,7 @@ class tx_coago {
 	                     			} ?>'. "\n\n";
 								$contentToStore = $cacheChecks . $contentToStore;
 							}
-							
+								
 							$contentToStore = $cacheChecks . $contentToStore;
 							$fileStatus = t3lib_div::writeFileToTypo3tempDir($absolutePathTempWithFilename, $contentToStore);
 							if ($fileStatus)t3lib_div::devLog('Error writing afterCache_file: '.$fileStatus, $this->extKey, 3);
@@ -227,14 +224,14 @@ class tx_coago {
                   </script>
                   ";
 
-						// cObject not yet cached in file or cache period expired? So generate and store in files.					
+						// cObject not yet cached in file or cache period expired? So generate and store in files.
 						if( file_exists($absolutePathTempWithFilename) ) {
 							$cachedFileExist = TRUE;
 							$ageInSeconds = time() - filemtime($absolutePathTempWithFilename);
 						}else {
 							$cachedFileExist = FALSE;
 						}
-						
+
 						if(! $cachedFileExist
 						||  ( $cachePeriod && ($ageInSeconds > $cachePeriod)) ){
 
@@ -252,8 +249,9 @@ class tx_coago {
 				break;
 
 		}
-		
+
 		self::$counter++;
+		
 		return $content;
 	}
 
