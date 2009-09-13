@@ -80,6 +80,7 @@ class tx_coago {
 
 				$this->cachePeriod = intval($this->cObj->stdWrap($this->TSObjectConf['cache.']['period'], $this->TSObjectConf['cache.']['period.']));
 
+				$this->typeNum = $GLOBALS['TSFE']->tmpl->setup['coago_ajax.']['typeNum'];
 
 				$this->setPathesAndFiles();
 
@@ -107,7 +108,7 @@ class tx_coago {
 					case 'afterCache_file_ajax':
 					case 'afterCacheFileAjax':
 					case '3':
-						
+
 						$content = $this->afterCacheFileAjax();
 
 						break;
@@ -182,21 +183,22 @@ class tx_coago {
 			$contentToStore = $this->getCoagoContent($this->TSObjectConf);
 
 			if( $this->cachePeriod ) {
-				$cacheChecks = '<?php
-	                     			$ageInSeconds = time() - filemtime(\''.$this->absolutePathWithFilename.'\');
-	                     			if( ($ageInSeconds > '.$this->cachePeriod.') && '.$this->cachePeriod.' ){
-	                     				t3lib_div::getURL(\''. t3lib_div::getIndpEnv('TYPO3_SITE_URL') . 'index.php?id=' . $GLOBALS['TSFE']->id . '&type=' . $this->typeNum . '&cacheHash=' . $this->cacheHash . '\');' .
-	                     			'} ?>'. "\n\n";
-				//t3lib_div::getURL(\''. t3lib_div::getIndpEnv('TYPO3_SITE_URL') . 'index.php?id='. $GLOBALS['TSFE']->id .'&no_cache=1\');
-				$contentToStore = $cacheChecks . $contentToStore;
+				$contentToStore = $this->getAfterCacheFileExpireChecks() . $contentToStore;
 			}
 
 			if($this->debug) {
-				$contentToStore .= $this->getFormattedTimeStamp('aferCacheFile');
+				$contentToStore .= $this->getFormattedTimeStamp('aferCacheFile - first call' . t3lib_div::getIndpEnv('TYPO3_REFERER'));
 			}
+				
+			// write data needed to reender this object later on using special PAGE type
+			$restoreData['cObj'] = $this->cObj;
+			$restoreData['conf'] = $this->TSObjectConf;
+			$restoreData['absolutePathWithFilename'] = $this->absolutePathWithFilename;
+			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, serialize($restoreData), 'COA_GO');
 
 			$fileStatus = t3lib_div::writeFileToTypo3tempDir($this->absolutePathWithFilename, $contentToStore);
 			if ($fileStatus)t3lib_div::devLog('Error writing afterCacheFile: '.$fileStatus, $this->extKey, 3);
+			t3lib_div::fixPermissions($this->absolutePathWithFilename);
 
 		}
 
@@ -219,11 +221,11 @@ class tx_coago {
 		$this->cachePeriod = $this->cachePeriod?$this->cachePeriod : '0';
 		$this->refresh = intval($this->cObj->stdWrap($this->TSObjectConf['cache.']['refresh'], $this->TSObjectConf['cache.']['refresh.'])) * 1000;
 		$this->onLoading = $this->cObj->stdWrap($this->TSObjectConf['cache.']['onLoading'], $this->TSObjectConf['cache.']['onLoading.']);
-		$this->typeNum = $GLOBALS['TSFE']->tmpl->setup['coago_ajax.']['typeNum'];
+
 
 
 		// CREATE FILE, THAT WILL BE FETACHED WITH AJAX
-		
+
 		// cObject not yet cached in file or cache period expired? So generate and store in files.
 		if( file_exists($this->absolutePathWithFilename) ) {
 			$cachedFileExist = TRUE;
@@ -239,9 +241,10 @@ class tx_coago {
 			if($this->debug) {
 				$contentToStore .= $this->getFormattedTimeStamp('afterCacheFileAjax - first call');
 			}
-			$fileStatus = t3lib_div::writeFileToTypo3tempDir($this->absolutePathWithFilename, $contentToStore);
+			$fileStatus = t3lib_div::writeFileToTypo3tempDir($this->absolutePathWithFilename, $contentToStore);			
 			if ($fileStatus)t3lib_div::devLog('Error writing afterCacheFileAjax: '.$fileStatus, $this->extKey, 3);
-
+			t3lib_div::fixPermissions($this->absolutePathWithFilename);
+			
 			// write data needed to reender this object later on using special PAGE type
 			$restoreData['cObj'] = $this->cObj;
 			$restoreData['conf'] = $this->TSObjectConf;
@@ -250,10 +253,10 @@ class tx_coago {
 
 		}
 
-		
-		
+
+
 		// GENERATE JAVASCRIPT THAT WILL LOAD CACHED COBJECT
-		
+
 		// hook for implementing own ajax script if you like to make it with some js frameworks as jQuery, MooTools, etc.
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['coago']['ajaxScript'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['coago']['ajaxScript'] as $_classRef) {
@@ -265,16 +268,16 @@ class tx_coago {
 		}
 
 		// script minification
-		$script = t3lib_div::minifyJavaScript($script, $error);
+		//$script = t3lib_div::minifyJavaScript($script, $error);
 		if ($error) {
 			t3lib_div::devLog('Error minimizing script: '.$error, $this->extKey, 3);
 		}
-		
+
 		// wrap the script end return
 		$content .= "<div id='ncc-{$this->counter}'><script type='text/javascript'>//<![CDATA[
 		{$script}
 		//]]></script></div>";
-		
+
 		return $content;
 	}
 
@@ -364,7 +367,7 @@ class tx_coago {
 	function regenerateContent($conf) {
 
 		$this->cacheHash = t3lib_div::GPvar('cacheHash');
-
+		
 		$restoreData = unserialize($GLOBALS['TSFE']->sys_page->getHash($this->cacheHash));
 
 		// this is for situation when "cache_hash" table has been cleared and there is no info to regenarate cObjects fetched by ajax, so we have to fetch the whole page
@@ -374,21 +377,39 @@ class tx_coago {
 			$restoreData = unserialize($GLOBALS['TSFE']->sys_page->getHash($this->cacheHash));
 		}
 
+		$this->cacheType = $this->cObj->stdWrap($restoreData['conf']['cache.']['type'], $restoreData['conf']['cache.']['type.']);
+		$this->cachePeriod = intval($this->cObj->stdWrap($restoreData['conf']['cache.']['period'], $restoreData['conf']['cache.']['period.']));
+		$this->absolutePathWithFilename = $restoreData['absolutePathWithFilename'];
+		$this->typeNum = $GLOBALS['TSFE']->tmpl->setup['coago_ajax.']['typeNum'];
+		
 		$GLOBALS['TSFE']->cObj = $restoreData['cObj'];
 
 		$contentToStore = $this->getCoagoContent($restoreData['conf']);
 		
+		
+		if($this->cachePeriod && ($this->cacheType == 'afterCacheFile' || $this->cacheType == 'afterCache_file' || $this->cacheType == 2) ) {
+			$contentToStore = $this->getAfterCacheFileExpireChecks() . $contentToStore;
+		}
+		
 		if($restoreData['conf']['cache.']['debug']) {
-				$contentToStore .= $this->getFormattedTimeStamp( $GLOBALS['TSFE']->cObj->stdWrap($restoreData['conf']['cache.']['type'], $restoreData['conf']['cache.']['type.']) . ' - regenerated' );
+			$contentToStore .= $this->getFormattedTimeStamp( $this->cacheType . ' - regenerated' );
 		}
 
-		$fileStatus = t3lib_div::writeFileToTypo3tempDir($restoreData['absolutePathWithFilename'], $contentToStore);
+		$fileStatus = t3lib_div::writeFileToTypo3tempDir($this->absolutePathWithFilename, $contentToStore);
 		if ($fileStatus)t3lib_div::devLog('Error writing afterCacheFileAjax: '.$fileStatus, $this->extKey, 3);
 	}
 
+	
+	
 
-
-
+	function getAfterCacheFileExpireChecks() {
+		$cacheChecks = '<?php
+	                     			$ageInSeconds = time() - filemtime(\''.$this->absolutePathWithFilename.'\');
+	                     			if( ($ageInSeconds > '.$this->cachePeriod.') && '.$this->cachePeriod.' ){
+	                     				t3lib_div::getURL(\''. t3lib_div::getIndpEnv('TYPO3_SITE_URL') . 'index.php?id=' . $GLOBALS['TSFE']->id . '&type=' . $this->typeNum . '&cacheHash=' . $this->cacheHash . '\');' .
+	                     			"\n" . '} ?>'. "\n\n";
+		return $cacheChecks;
+	}
 
 
 
@@ -472,7 +493,7 @@ if( navigator.appName === 'Microsoft Internet Explorer' ) {
   ";
 		//condition for refreshing the content at apge
 		if($this->refresh){
-	  $script .= " setTimeout('coa_go_{$counter}()', {$this->refresh});";
+	  		$script .= " setTimeout('coa_go_{$counter}()', {$this->refresh});";
 		}
 		//cloasing bracet for all javascript
 		$script .= "} coa_go_{$counter}();";

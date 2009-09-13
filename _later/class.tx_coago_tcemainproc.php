@@ -62,6 +62,8 @@ class tx_coago_tcemainproc {
 	 */
 	function processDatamap_afterDatabaseOperations($status, $table, $id, &$fieldArray, &$thisRef) {
 
+		die;
+		
 		$confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['newcachecobj']); 		
 
 		if ( t3lib_div::inList($table, $confArr['clearOnTablesChange']) ) {
@@ -74,6 +76,8 @@ class tx_coago_tcemainproc {
 	
 	function deleteAllFiles($cacheDirectory) {
 
+		die;
+		
 	if( file_exists($cacheDirectory) ){
 	
 			$filesToDelete = t3lib_div::getFilesInDir($cacheDirectory);
@@ -87,6 +91,8 @@ class tx_coago_tcemainproc {
 	}
 
 	function regenerateCachedCObj() {
+		
+		die;
 		
 		//debug($this->loadTS(640));
 	

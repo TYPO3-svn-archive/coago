@@ -38,7 +38,7 @@ class tx_coago_mod {
 
 
 		$siteUrl = t3lib_div::getIndpEnv('TYPO3_SITE_URL');
-		$counter = $parentObj::$counter;
+		$counter = $parentObj->counter;
 
 		$script = "
 	
@@ -128,8 +128,8 @@ if( navigator.appName === 'Microsoft Internet Explorer' ) {
 
 
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/coago/class.tx_coago_mod.php']) {
-	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/coago/class.tx_coago_mod.php']);
+if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/coago/misc/class.tx_coago_mod.php']) {
+	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/coago/misc/class.tx_coago_mod.php']);
 }
 
 ?>

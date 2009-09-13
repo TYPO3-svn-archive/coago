@@ -8,12 +8,13 @@ if (TYPO3_MODE == 'FE') {
 	array('COA_GO', 'EXT:coago/class.tx_coago.php:&tx_coago');	
 
 	// example of hook
-	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['coago']['ajaxScript'][] = 'EXT:coago/misc/class.tx_coago_mod.php:tx_coago_mod';	
+	//$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['coago']['ajaxScript'][] = 'EXT:coago/misc/class.tx_coago_mod.php:tx_coago_mod';	
 }
 
 if (TYPO3_MODE == 'BE') {
 
 	// TODO
+	// DO NOT UNCOMMENT THIS!!!
 	//$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass'][] = 'EXT:coago/class.tx_coago_tcemainproc.php:tx_coago_tcemainproc';
 	//$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'][] = 'EXT:coago/class.tx_coago_tcemainproc.php:tx_coago_tcemainproc';
 
