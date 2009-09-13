@@ -35,7 +35,6 @@ class tx_coago {
 	public $defaultCacheFileExtension = 'html';
 	public static $counter = 1;
 
-
 	public $TSObjectName;
 	public $TSObjectConf;
 	public $TSObjectTSKey;
@@ -47,7 +46,6 @@ class tx_coago {
 	public $refresh;
 	public $onLoading;
 	public $typeNum;
-
 
 
 	function cObjGetSingleExt($name, $conf, $TSkey, &$cObj) {
@@ -189,7 +187,7 @@ class tx_coago {
 			if($this->debug) {
 				$contentToStore .= $this->getFormattedTimeStamp('aferCacheFile - first call' . t3lib_div::getIndpEnv('TYPO3_REFERER'));
 			}
-				
+
 			// write data needed to reender this object later on using special PAGE type
 			$restoreData['cObj'] = $this->cObj;
 			$restoreData['conf'] = $this->TSObjectConf;
@@ -241,10 +239,10 @@ class tx_coago {
 			if($this->debug) {
 				$contentToStore .= $this->getFormattedTimeStamp('afterCacheFileAjax - first call');
 			}
-			$fileStatus = t3lib_div::writeFileToTypo3tempDir($this->absolutePathWithFilename, $contentToStore);			
+			$fileStatus = t3lib_div::writeFileToTypo3tempDir($this->absolutePathWithFilename, $contentToStore);
 			if ($fileStatus)t3lib_div::devLog('Error writing afterCacheFileAjax: '.$fileStatus, $this->extKey, 3);
 			t3lib_div::fixPermissions($this->absolutePathWithFilename);
-			
+
 			// write data needed to reender this object later on using special PAGE type
 			$restoreData['cObj'] = $this->cObj;
 			$restoreData['conf'] = $this->TSObjectConf;
@@ -367,7 +365,7 @@ class tx_coago {
 	function regenerateContent($conf) {
 
 		$this->cacheHash = t3lib_div::GPvar('cacheHash');
-		
+
 		$restoreData = unserialize($GLOBALS['TSFE']->sys_page->getHash($this->cacheHash));
 
 		// this is for situation when "cache_hash" table has been cleared and there is no info to regenarate cObjects fetched by ajax, so we have to fetch the whole page
@@ -381,16 +379,16 @@ class tx_coago {
 		$this->cachePeriod = intval($this->cObj->stdWrap($restoreData['conf']['cache.']['period'], $restoreData['conf']['cache.']['period.']));
 		$this->absolutePathWithFilename = $restoreData['absolutePathWithFilename'];
 		$this->typeNum = $GLOBALS['TSFE']->tmpl->setup['coago_ajax.']['typeNum'];
-		
+
 		$GLOBALS['TSFE']->cObj = $restoreData['cObj'];
 
 		$contentToStore = $this->getCoagoContent($restoreData['conf']);
-		
-		
+
+
 		if($this->cachePeriod && ($this->cacheType == 'afterCacheFile' || $this->cacheType == 'afterCache_file' || $this->cacheType == 2) ) {
 			$contentToStore = $this->getAfterCacheFileExpireChecks() . $contentToStore;
 		}
-		
+
 		if($restoreData['conf']['cache.']['debug']) {
 			$contentToStore .= $this->getFormattedTimeStamp( $this->cacheType . ' - regenerated' );
 		}
@@ -399,9 +397,15 @@ class tx_coago {
 		if ($fileStatus)t3lib_div::devLog('Error writing afterCacheFileAjax: '.$fileStatus, $this->extKey, 3);
 	}
 
-	
-	
 
+
+
+	/*
+	 * Returns php code needed to check if cObject in method "afterCacheFile" is expired
+	 *
+	 * @return string php code
+	 * @author Krystian Szymukowicz <typo3@prolabium.com>
+	 */
 	function getAfterCacheFileExpireChecks() {
 		$cacheChecks = '<?php
 	                     			$ageInSeconds = time() - filemtime(\''.$this->absolutePathWithFilename.'\');
@@ -414,6 +418,12 @@ class tx_coago {
 
 
 
+	/*
+	 * Returns javascript code that fetch and regenerate the content objects
+	 *
+	 * @return string javascript code
+	 * @author Krystian Szymukowicz <typo3@prolabium.com>
+	 */
 	function getCoagoAjaxScript() {
 
 		$counter = $this->counter;
@@ -493,7 +503,7 @@ if( navigator.appName === 'Microsoft Internet Explorer' ) {
   ";
 		//condition for refreshing the content at apge
 		if($this->refresh){
-	  		$script .= " setTimeout('coa_go_{$counter}()', {$this->refresh});";
+			$script .= " setTimeout('coa_go_{$counter}()', {$this->refresh});";
 		}
 		//cloasing bracet for all javascript
 		$script .= "} coa_go_{$counter}();";

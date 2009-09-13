@@ -3,7 +3,6 @@
 ########################################################################
 # Extension Manager/Repository config file for ext: "coago"
 #
-# Auto generated 27-04-2009 16:54
 #
 # Manual updates:
 # Only the data in the array - anything else is removed by next write.

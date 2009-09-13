@@ -178,8 +178,5 @@ class tx_coago_tcemainproc {
 }
 
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/coago/class.tx_coago_tcemainproc.php']) {
-	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/coago/class.tx_coago_tcemainproc.php']);
-}
 
 ?>
