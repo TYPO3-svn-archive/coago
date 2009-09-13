@@ -5,8 +5,10 @@ if (!defined ('TYPO3_MODE')) 	die ('Access denied.');
 if (TYPO3_MODE == 'FE') {
 
 	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClass'][] = 
-	array('COA_GO', 'EXT:coago/class.tx_coago.php:&tx_coago');		
-		
+	array('COA_GO', 'EXT:coago/class.tx_coago.php:&tx_coago');	
+
+	// example of hook
+	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['coago']['ajaxScript'][] = 'EXT:coago/misc/class.tx_coago_mod.php:tx_coago_mod';	
 }
 
 if (TYPO3_MODE == 'BE') {
