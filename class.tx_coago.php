@@ -272,9 +272,9 @@ class tx_coago {
 		}
 
 		// wrap the script end return
-		$content .= "<div id='ncc-{$this->counter}'><script type='text/javascript'>//<![CDATA[
+		$content .= "<div id='ncc-{$this->counter}'><script type='text/javascript'>
 		{$script}
-		//]]></script></div>";
+		</script></div>";
 
 		return $content;
 	}
