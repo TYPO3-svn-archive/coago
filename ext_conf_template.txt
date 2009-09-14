@@ -1,0 +1,4 @@
+  # cat=basic//70; type=text; label= cached cObj directory: With ending slash.
+cacheDirectory = typo3temp/cached_cobj/
+  # cat=basic//75; type=text; label= Extension automatically added to hash when creating cObject files: From TYPO3 4.3 there is no way to set hash name with dot, and configuration of some hosts need the file to have extension to be fetched, so this is the way to add extension you like. 
+cacheFileExtension = html
