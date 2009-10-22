@@ -55,7 +55,7 @@ class tx_coago {
 		$this->TSObjectTSKey = $TSkey;
 		$this->cObj = $cObj;
 		$this->debug = $this->TSObjectConf['cache.']['debug'];
-
+		
 		$content = '';
 
 		switch($this->TSObjectName) {
@@ -134,7 +134,7 @@ class tx_coago {
 	 */
 	function beforeCacheDb() {
 
-		$GLOBALS['TSFE']->sys_page->getHash($this->cacheHash, $this->cachePeriod);
+		$content = $GLOBALS['TSFE']->sys_page->getHash($this->cacheHash, $this->cachePeriod);
 
 		// Not yet cached? So generate and store in cache_hash.
 		if ( !strlen($content) ) {
@@ -189,10 +189,10 @@ class tx_coago {
 			}
 
 			// write data needed to reender this object later on using special PAGE type
-			$restoreData['cObj'] = $this->cObj;
-			$restoreData['conf'] = $this->TSObjectConf;
-			$restoreData['absolutePathWithFilename'] = $this->absolutePathWithFilename;
-			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, serialize($restoreData), 'COA_GO');
+			$this->restoreData['cObj'] = $this->cObj;
+			$this->restoreData['conf'] = $this->TSObjectConf;
+			$this->restoreData['absolutePathWithFilename'] = $this->absolutePathWithFilename;
+			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, serialize($this->restoreData), 'COA_GO');
 
 			$fileStatus = t3lib_div::writeFileToTypo3tempDir($this->absolutePathWithFilename, $contentToStore);
 			if ($fileStatus)t3lib_div::devLog('Error writing afterCacheFile: '.$fileStatus, $this->extKey, 3);
@@ -244,10 +244,10 @@ class tx_coago {
 			t3lib_div::fixPermissions($this->absolutePathWithFilename);
 
 			// write data needed to reender this object later on using special PAGE type
-			$restoreData['cObj'] = $this->cObj;
-			$restoreData['conf'] = $this->TSObjectConf;
-			$restoreData['absolutePathWithFilename'] = $this->absolutePathWithFilename;
-			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, serialize($restoreData), 'COA_GO');
+			$this->restoreData['cObj'] = $this->cObj;
+			$this->restoreData['conf'] = $this->TSObjectConf;
+			$this->restoreData['absolutePathWithFilename'] = $this->absolutePathWithFilename;
+			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, serialize($this->restoreData), 'COA_GO');
 
 		}
 
@@ -266,7 +266,7 @@ class tx_coago {
 		}
 
 		// script minification
-		//$script = t3lib_div::minifyJavaScript($script, $error);
+		$script = t3lib_div::minifyJavaScript($script, $error);
 		if ($error) {
 			t3lib_div::devLog('Error minimizing script: '.$error, $this->extKey, 3);
 		}
@@ -311,7 +311,13 @@ class tx_coago {
 	 * @author Krystian Szymukowicz <typo3@prolabium.com>
 	 */
 	function getFormattedTimeStamp($marker) {
-		return '<span style="border:1px dashed #aaa; background: yellow; padding:0 5px; margin: 0 5px">cObject hash: ' . ($this->cacheHash) . ' '  . strftime("%Y-%m-%d %H:%M:%S") .' '. ($marker ? '['. $marker .']':'') .'</span>';
+		
+		if( $this->TSObjectConf['cache.']['debug.']['asHtmlComments'] || $this->restoreData['conf']['cache.']['debug.']['asHtmlComments'] ){
+			$content = '<!-- cObject hash: ' . ($this->cacheHash) . ' '  . strftime("%Y-%m-%d %H:%M:%S") .' '. ($marker ? '['. $marker .']':'') .' -->';			
+		} else {
+			$content = '<span style="border:1px dashed #aaa; background: yellow; padding:0 5px; margin: 0 5px">cObject hash: ' . ($this->cacheHash) . ' '  . strftime("%Y-%m-%d %H:%M:%S") .' '. ($marker ? '['. $marker .']':'') .'</span>';
+		}
+		return $content;
 	}
 
 
@@ -354,7 +360,7 @@ class tx_coago {
 
 
 	/*
-	 * Regenerates cObject and put the content to file under GPvar('cacheHash') name. This is invoked by
+	 * Regenerates cObject and put the content to file under _GPmerged('cacheHash') name. This is invoked by
 	 * requesting special URL like: http://www.example.com/index.php?id=xxx&type=yyy&cacheHash=zzzz
 	 * Type of page is set in static/contants.txt
 	 *
@@ -364,32 +370,34 @@ class tx_coago {
 	 */
 	function regenerateContent($conf) {
 
-		$this->cacheHash = t3lib_div::GPvar('cacheHash');
-
-		$restoreData = unserialize($GLOBALS['TSFE']->sys_page->getHash($this->cacheHash));
+		$this->cacheHash = t3lib_div::_GP('cacheHash');
+		if(!preg_match('/^[a-zA-Z0-9_%\-&]{1,250}$/', $this->cacheHash)) {
+			t3lib_div::devLog('Bad hash passed in GET vars when regenerating content.', 'coago', 3);
+			die('Bad hash passed in GET vars when regenerating content.');
+		}
+		$this->restoreData = unserialize($GLOBALS['TSFE']->sys_page->getHash($this->cacheHash));
 
 		// this is for situation when "cache_hash" table has been cleared and there is no info to regenarate cObjects fetched by ajax, so we have to fetch the whole page
-		if(!$restoreData){
-
+		if(!$this->restoreData){
 			t3lib_div::getURL(t3lib_div::getIndpEnv('TYPO3_SITE_URL') . 'index.php?id='. $GLOBALS['TSFE']->id .'&no_cache=1');
-			$restoreData = unserialize($GLOBALS['TSFE']->sys_page->getHash($this->cacheHash));
+			$this->restoreData = unserialize($GLOBALS['TSFE']->sys_page->getHash($this->cacheHash));
 		}
 
-		$this->cacheType = $this->cObj->stdWrap($restoreData['conf']['cache.']['type'], $restoreData['conf']['cache.']['type.']);
-		$this->cachePeriod = intval($this->cObj->stdWrap($restoreData['conf']['cache.']['period'], $restoreData['conf']['cache.']['period.']));
-		$this->absolutePathWithFilename = $restoreData['absolutePathWithFilename'];
+		$this->cacheType = $this->cObj->stdWrap($this->restoreData['conf']['cache.']['type'], $this->restoreData['conf']['cache.']['type.']);
+		$this->cachePeriod = intval($this->cObj->stdWrap($this->restoreData['conf']['cache.']['period'], $this->restoreData['conf']['cache.']['period.']));
+		$this->absolutePathWithFilename = $this->restoreData['absolutePathWithFilename'];
 		$this->typeNum = $GLOBALS['TSFE']->tmpl->setup['coago_ajax.']['typeNum'];
 
-		$GLOBALS['TSFE']->cObj = $restoreData['cObj'];
+		$GLOBALS['TSFE']->cObj = $this->restoreData['cObj'];
 
-		$contentToStore = $this->getCoagoContent($restoreData['conf']);
+		$contentToStore = $this->getCoagoContent($this->restoreData['conf']);
 
 
 		if($this->cachePeriod && ($this->cacheType == 'afterCacheFile' || $this->cacheType == 'afterCache_file' || $this->cacheType == 2) ) {
 			$contentToStore = $this->getAfterCacheFileExpireChecks() . $contentToStore;
 		}
 
-		if($restoreData['conf']['cache.']['debug']) {
+		if($this->restoreData['conf']['cache.']['debug']) {
 			$contentToStore .= $this->getFormattedTimeStamp( $this->cacheType . ' - regenerated' );
 		}
 
@@ -438,7 +446,9 @@ if( navigator.appName === 'Microsoft Internet Explorer' ) {
 	http_req_{$counter} = new XMLHttpRequest();
  }
 
- http_req_{$counter}.open('POST', '{$siteUrl}{$this->relativePath}{$this->filename}',true);
+ http_req_{$counter}.open('GET', '{$siteUrl}{$this->relativePath}{$this->filename}',true);
+ http_req_{$counter}.setRequestHeader('Content-type', 'text/html');
+ http_req_{$counter}.setRequestHeader('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT' );	 			
  http_req_{$counter}.send(null);
 
  ";
@@ -453,8 +463,6 @@ if( navigator.appName === 'Microsoft Internet Explorer' ) {
 
 	   ageInSeconds = (new Date() - Date.parse(http_req_{$counter}.getResponseHeader('Last-Modified'))) / 1000;
 
-	   //alert('main condition:' + (http_req_{$counter}.status === 200) && ( (ageInSeconds < {$this->cachePeriod}) || ('{$this->cachePeriod}' === '0') ) + '<br /> counter :' +{$counter} + 'age cond :' + (ageInSeconds < {$this->cachePeriod}) + 'cache period: ' + {$this->cachePeriod} + 'ageinSec: ' + ageInSeconds);
-
 	   if( (http_req_{$counter}.status === 200) && ( (ageInSeconds < {$this->cachePeriod}) || ('{$this->cachePeriod}' === '0') ) ) {		  	
 	   		document.getElementById('ncc-{$counter}').innerHTML = http_req_{$counter}.responseText;
 	   } else {
@@ -466,10 +474,12 @@ if( navigator.appName === 'Microsoft Internet Explorer' ) {
 			 http_req_{$counter}_r1 = new XMLHttpRequest();
 		  }
 
-		  http_req_{$counter}_r1.open('POST', '{$siteUrl}index.php?id={$GLOBALS['TSFE']->id}&type={$this->typeNum}&cacheHash={$this->cacheHash}');
-		  http_req_{$counter}_r1.send(null);
+		http_req_{$counter}_r1.open('GET', '{$siteUrl}index.php?id={$GLOBALS['TSFE']->id}&type={$this->typeNum}&cacheHash={$this->cacheHash}');
+		http_req_{$counter}_r1.setRequestHeader('Content-type', 'text/html');
+		http_req_{$counter}_r1.setRequestHeader('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT' );		 			
+		http_req_{$counter}_r1.send(null);
 
-		  http_req_{$counter}_r1.onreadystatechange=function() {
+		http_req_{$counter}_r1.onreadystatechange=function() {
 			 if( http_req_{$counter}_r1.readyState === 4 ) {
 
 				var http_req_{$counter}_r2 = false;
@@ -479,15 +489,17 @@ if( navigator.appName === 'Microsoft Internet Explorer' ) {
 				   http_req_{$counter}_r2 = new XMLHttpRequest();
 				}
 
-				http_req_{$counter}_r2.open('POST', '{$siteUrl}{$this->relativePath}{$this->filename}',true);
-				http_req_{$counter}_r2.send(null);";
+			 http_req_{$counter}_r2.open('GET', '{$siteUrl}{$this->relativePath}{$this->filename}',true);
+			 http_req_{$counter}_r2.setRequestHeader('Content-type', 'text/html');
+			 http_req_{$counter}_r2.setRequestHeader('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT' );		 			
+			 http_req_{$counter}_r2.send(null);";
 
-		if($this->onLoading) {
-			$script .= "		document.getElementById('ncc-{$counter}').innerHTML = {$this->onLoading};";
-		}
+			 if($this->onLoading) {
+				$script .= "		document.getElementById('ncc-{$counter}').innerHTML = {$this->onLoading};";
+			 }
 
-		$script .= "
-				http_req_{$counter}_r2.onreadystatechange=function() {
+			 $script .= "
+			http_req_{$counter}_r2.onreadystatechange=function() {
 
 				if( http_req_{$counter}_r2.readyState === 4 ) {
 					  if( http_req_{$counter}_r2.status === 200 ) {

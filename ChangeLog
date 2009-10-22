@@ -1,3 +1,5 @@
+0.1.5 * request method in ajax call changed from POST to GET. With POST method there was some problems on Safari at MAC (many thanks to Kurt Knote for fighting with this bug!)
+	  * fixed bug in beforeCache_db. No assign to $content after get from cache.
 
 0.1.4 * NOTE! Remember to include static TS from extension if you use afterCacheFileAjax method.
       * cObject regeneration are now conducted using special PAGE type. This should be much faster than calling regular page with parameter no_cache=1
