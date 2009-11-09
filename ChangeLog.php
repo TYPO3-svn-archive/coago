@@ -1,3 +1,16 @@
+<?php die; ?>
+
+0.2.0 * New options in EM:
+		a) "Render COA_GO as COA" If set to TRUE it will disable COA_GO and the COA_GO will be rendered as normal COA. It allows you to simply compare times of rendering with or witout COA_GO.
+		b) "hash from cObj path" If set to TRUE then hashes will be made of cObject path. For example if you have "page.10.subpart.myMenu < temp.myMenu" then hash will have name "subpart_myMenu". This is solution if you are too lazy to write your own name for hash using "cache.hash" property. Take under consideration that in some cases this do not guarantee uniqness.
+		c) "Clear cache on table changes" If set to TRUE and you will change a record in backend then all cache entries created by COA_GO for this specific table will be removed from cache. This is an easy way to refresh cached values on base of backend user activity. Example - if user changes page title then all COA_GO that have "cache.clearCacheOnTableChange" set to "pages" will be removed from cache and the frontend will be up to date.
+		
+	  * "hash.special.unique.pidList" - here you can enter the page uids (comma separated) which is a parent for other pages. Pages with uids that have this pid will have its own entry in the cache. Example of usage
+	  * "hash.special.unique.uidList" - here you can enter the page uids (comma separated) which will have its own entry in the cache. 
+	  * "hash.special.lang" - if set to "1" then language (eg. en, de, pl) will be added to hash name. Use in multilanguage sites.
+	  * "clearCacheOnTableChange" - here you can enter one table name. If records belonging to that table will be changed in BE then all the cache (in db and files) of that table created by COA_GO will be deleted. For example if you set "clearCacheOnTableChange = pages" and change title of a page then files in cacheDirectory and entries in cache_hash belonfing to COA_GO_pages will be deleted and this way the change of a title will be visible at frontend.
+	   
+	  
 0.1.5 * request method in ajax call changed from POST to GET. With POST method there was some problems on Safari at MAC (many thanks to Kurt Knote for fighting with this bug!)
 	  * fixed bug in beforeCache_db. No assign to $content after get from cache.
 
@@ -21,3 +34,4 @@
 	  * type, period and hash are now stdWrap.
 
 0.1.2 Initial upload
+

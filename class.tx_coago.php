@@ -50,80 +50,160 @@ class tx_coago {
 
 	function cObjGetSingleExt($name, $conf, $TSkey, &$cObj) {
 
-		$this->TSObjectName = $name;
-		$this->TSObjectConf = $conf;
-		$this->TSObjectTSKey = $TSkey;
-		$this->cObj = $cObj;
-		$this->debug = $this->TSObjectConf['cache.']['debug'];
-		
-		$content = '';
-
-		switch($this->TSObjectName) {
+		switch($name) {
 
 			case "COA_GO":
 
-				$this->cacheHash = $this->cObj->stdWrap($this->TSObjectConf['cache.']['hash'], $this->TSObjectConf['cache.']['hash.']);
+				$content = '';
+				$this->cObj = $cObj;
+				$this->confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]);
 
-				// set default $cacheHash
-				if( !$this->cacheHash ) {
-					$this->cacheHash = md5( serialize($this->TSObjectConf) );
+					
+				if(! $this->confArr['coagoDisable'] ) {
+
+					$this->TSObjectName = $name;
+					$this->TSObjectConf = $conf;
+					$this->TSObjectTSKey = $TSkey;
+					$this->debug = $this->TSObjectConf['cache.']['debug'];
+					$this->table = $this->cObj->stdWrap($this->TSObjectConf['cache.']['clearCacheOnTableChange'], $this->TSObjectConf['cache.']['clearCacheOnTableChange.']);
+					$this->ident = '';
+					if( strlen($this->table) ) {
+						$this->ident = '_' . $this->table;
+					}
+					$rangeUidList = $this->cObj->stdWrap($this->TSObjectConf['cache.']['range.']['uidList'], $this->TSObjectConf['cache.']['range.']['uidList.']);
+					
+					$process = TRUE;
+					if($rangeUidList) {
+						$process = t3lib_div::inList($rangeUidList, $GLOBALS['TSFE']->id);
+					}
+
+					if($process) {
+
+						$this->cacheHash = $this->getCobjHash();
+
+						$this->cacheType = $this->cObj->stdWrap($this->TSObjectConf['cache.']['type'], $this->TSObjectConf['cache.']['type.']);
+
+						// set default cacheType
+						if( ! strlen($this->cacheType) ) {
+							$this->cacheType = 'beforeCacheDb';
+						}
+
+						$this->cachePeriod = intval($this->cObj->stdWrap($this->TSObjectConf['cache.']['period'], $this->TSObjectConf['cache.']['period.']));
+
+						$this->typeNum = $GLOBALS['TSFE']->tmpl->setup['coago_ajax.']['typeNum'];
+
+						$this->setPathesAndFiles();
+
+
+						switch($this->cacheType) {
+
+							case 'beforeCache_db':
+							case 'beforeCacheDb':
+							case '1':
+
+								$content = $this->beforeCacheDb();
+
+								break;
+
+
+							case 'afterCache_file':
+							case 'afterCacheFile':
+							case '2':
+
+								$content = $this->afterCacheFile();
+
+								break;
+
+
+							case 'afterCache_file_ajax':
+							case 'afterCacheFileAjax':
+							case '3':
+
+								$content = $this->afterCacheFileAjax();
+
+								break;
+
+						}
+
+						self::$counter++;
+
+					} else {
+						// if cache.range is out of scope then just return simple COA
+						$content = $this->getCoagoContent($conf);
+					}
+				} else {
+					// if EM parameter coago_active is FALSE then just return simple COA
+					$content = $this->getCoagoContent($conf);
 				}
 
-				$this->cacheType = $this->cObj->stdWrap($this->TSObjectConf['cache.']['type'], $this->TSObjectConf['cache.']['type.']);
+				return $content;
 
-				// set default cacheType
-				if( ! strlen($this->cacheType) ) {
-					$this->cacheType = 'beforeCacheDb';
-				}
+				break;
 
-				$this->cachePeriod = intval($this->cObj->stdWrap($this->TSObjectConf['cache.']['period'], $this->TSObjectConf['cache.']['period.']));
-
-				$this->typeNum = $GLOBALS['TSFE']->tmpl->setup['coago_ajax.']['typeNum'];
-
-				$this->setPathesAndFiles();
-
-
-				switch($this->cacheType) {
-
-					case 'beforeCache_db':
-					case 'beforeCacheDb':
-					case '1':
-
-						$content = $this->beforeCacheDb();
-
-						break;
-
-
-					case 'afterCache_file':
-					case 'afterCacheFile':
-					case '2':
-
-						$content = $this->afterCacheFile();
-
-						break;
-
-
-					case 'afterCache_file_ajax':
-					case 'afterCacheFileAjax':
-					case '3':
-
-						$content = $this->afterCacheFileAjax();
-
-						break;
-
-				}
 		}
 
-		self::$counter++;
-
-		return $content;
 	}
 
 
 
 
 
+	function getCobjHash() {
 
+		// read unique settings try to figure out if the cObj should be regenerated for $GLOBALS['TSFE']->id page
+		if( is_array($this->TSObjectConf['cache.']['hash.']['special.']) ){
+
+			$uidList = $this->TSObjectConf['cache.']['hash.']['special.']['unique.']['uidList'];
+			$pidList = $this->TSObjectConf['cache.']['hash.']['special.']['unique.']['pidList'];
+			if($pidList) {
+				$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows ('uid', 'pages', 'pid IN('. trim($pidList) . ') AND doktype <> 254', $groupBy='', $orderBy='', $limit='');
+				if($rows) {
+					foreach($rows as $row) {
+						$uidList .= ',' . $row['uid'];
+					}
+				}
+			}
+
+			//check if any uid from rootline is equal to any value from uniqness $uidList
+			$unique = '';
+			foreach($GLOBALS['TSFE']->tmpl->rootLine as $page) {
+				if( t3lib_div::inList($uidList, $page['uid']) ) {
+					$unique =  '_' . $page['uid'];
+					break;
+				}
+			}
+		}
+
+		//get the hash base name
+		$hash = $this->cObj->stdWrap($this->TSObjectConf['cache.']['hash'], $this->TSObjectConf['cache.']['hash.']);
+
+		if( !strlen($hash) ){
+			if($this->confArr['hashNamesFromTS']) {
+				$hash = str_replace('.', '_', $this->TSObjectTSKey);
+			} else {
+				$hash = md5( serialize($this->TSObjectConf) );
+			}
+		}
+
+		// check if language shuold be included into hash
+		if($this->TSObjectConf['cache.']['hash.']['special.']['lang']) {
+			$hash .= '_' . $GLOBALS['TSFE']->config['config']['language'];
+		}
+		
+		//join it with unique
+		$hash .= $unique;
+
+		// hook for implementing own hash calculating methods. You can also use stdWrap - postUserfunc for that.
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['coago']['hashScript'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['coago']['hashScript'] as $_classRef) {
+				$_procObj = & t3lib_div::getUserObj($_classRef);
+				$hash = $_procObj->getCobjHash($this);
+			}
+		}
+
+		return $hash;
+
+	}
 
 
 
@@ -144,7 +224,7 @@ class tx_coago {
 				$content .= $this->getFormattedTimeStamp('beforeCacheDb');
 			}
 
-			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, $content, 'COA_GO');
+			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, $content, 'COA_GO'. $this->ident);
 
 		}
 		return $content;
@@ -192,7 +272,7 @@ class tx_coago {
 			$this->restoreData['cObj'] = $this->cObj;
 			$this->restoreData['conf'] = $this->TSObjectConf;
 			$this->restoreData['absolutePathWithFilename'] = $this->absolutePathWithFilename;
-			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, serialize($this->restoreData), 'COA_GO');
+			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, serialize($this->restoreData), 'COA_GO'. $this->ident);
 
 			$fileStatus = t3lib_div::writeFileToTypo3tempDir($this->absolutePathWithFilename, $contentToStore);
 			if ($fileStatus)t3lib_div::devLog('Error writing afterCacheFile: '.$fileStatus, $this->extKey, 3);
@@ -219,8 +299,9 @@ class tx_coago {
 		$this->cachePeriod = $this->cachePeriod?$this->cachePeriod : '0';
 		$this->refresh = intval($this->cObj->stdWrap($this->TSObjectConf['cache.']['refresh'], $this->TSObjectConf['cache.']['refresh.'])) * 1000;
 		$this->onLoading = $this->cObj->stdWrap($this->TSObjectConf['cache.']['onLoading'], $this->TSObjectConf['cache.']['onLoading.']);
-
-
+		if( $this->table ) {
+				$this->ident = '_' . $this->table;
+		}
 
 		// CREATE FILE, THAT WILL BE FETACHED WITH AJAX
 
@@ -247,7 +328,7 @@ class tx_coago {
 			$this->restoreData['cObj'] = $this->cObj;
 			$this->restoreData['conf'] = $this->TSObjectConf;
 			$this->restoreData['absolutePathWithFilename'] = $this->absolutePathWithFilename;
-			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, serialize($this->restoreData), 'COA_GO');
+			$GLOBALS['TSFE']->sys_page->storeHash($this->cacheHash, serialize($this->restoreData), 'COA_GO'. $this->ident);
 
 		}
 
@@ -311,9 +392,9 @@ class tx_coago {
 	 * @author Krystian Szymukowicz <typo3@prolabium.com>
 	 */
 	function getFormattedTimeStamp($marker) {
-		
+
 		if( $this->TSObjectConf['cache.']['debug.']['asHtmlComments'] || $this->restoreData['conf']['cache.']['debug.']['asHtmlComments'] ){
-			$content = '<!-- cObject hash: ' . ($this->cacheHash) . ' '  . strftime("%Y-%m-%d %H:%M:%S") .' '. ($marker ? '['. $marker .']':'') .' -->';			
+			$content = '<!-- cObject hash: ' . ($this->cacheHash) . ' '  . strftime("%Y-%m-%d %H:%M:%S") .' '. ($marker ? '['. $marker .']':'') .' -->';
 		} else {
 			$content = '<span style="border:1px dashed #aaa; background: yellow; padding:0 5px; margin: 0 5px">cObject hash: ' . ($this->cacheHash) . ' '  . strftime("%Y-%m-%d %H:%M:%S") .' '. ($marker ? '['. $marker .']':'') .'</span>';
 		}
@@ -351,8 +432,8 @@ class tx_coago {
 
 		$this->relativePath =  $confArr['cacheDirectory'];
 		$this->absolutePath = PATH_site . $this->relativePath;
-		$this->absolutePathWithFilename = $this->absolutePath . $this->cacheHash . '.' . $this->cacheFileExtension;
-		$this->filename = $this->cacheHash . '.' . $this->cacheFileExtension;
+		$this->filename = $this->cacheHash . $this->ident . '.' . $this->cacheFileExtension;
+		$this->absolutePathWithFilename = $this->absolutePath . $this->filename;
 	}
 
 
@@ -371,7 +452,7 @@ class tx_coago {
 	function regenerateContent($conf) {
 
 		$this->cacheHash = t3lib_div::_GP('cacheHash');
-		if(!preg_match('/^[a-zA-Z0-9_%\-&]{1,250}$/', $this->cacheHash)) {
+		if(!preg_match('/^[a-zA-Z0-9_\-]{1,250}$/', $this->cacheHash)) {
 			t3lib_div::devLog('Bad hash passed in GET vars when regenerating content.', 'coago', 3);
 			die('Bad hash passed in GET vars when regenerating content.');
 		}
@@ -494,11 +575,11 @@ if( navigator.appName === 'Microsoft Internet Explorer' ) {
 			 http_req_{$counter}_r2.setRequestHeader('If-Modified-Since', 'Thu, 01 Jan 1970 00:00:00 GMT' );		 			
 			 http_req_{$counter}_r2.send(null);";
 
-			 if($this->onLoading) {
-				$script .= "		document.getElementById('ncc-{$counter}').innerHTML = {$this->onLoading};";
-			 }
+		if($this->onLoading) {
+			$script .= "		document.getElementById('ncc-{$counter}').innerHTML = {$this->onLoading};";
+		}
 
-			 $script .= "
+		$script .= "
 			http_req_{$counter}_r2.onreadystatechange=function() {
 
 				if( http_req_{$counter}_r2.readyState === 4 ) {
