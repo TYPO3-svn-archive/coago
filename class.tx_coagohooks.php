@@ -9,19 +9,20 @@ class tx_coagohooks {
 	 */
 	function clearCachePostProc(&$params, &$pObj) {
 
-		if( $params['cacheCmd'] == 'all' || $params['cacheCmd'] == 'pages' ) {
+	if( $params['cacheCmd'] == 'all' || $params['cacheCmd'] == 'pages' ) {
 
 			//remove all files from cache directory
 			$confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['coago']);
 			if( !$confArr['cacheDirectory'] ) {
-				$confArr['cacheDirectory'] = $this->defaultCacheDirectory;
+				$confArr['cacheDirectory'] = 'typo3temp/cached_cobj/';
 			}
 
 			if( strlen($confArr['cacheDirectory']) ) {
-				$absolutePath = PATH_site . '/' . $confArr['cacheDirectory'];
+				$absolutePath = PATH_site . $confArr['cacheDirectory'];
+
 				if( file_exists($absolutePath) ){
 					$filesToDelete = t3lib_div::getFilesInDir($absolutePath);
-					if(is_array($filesToDelete)) {
+					if( is_array($filesToDelete) ) {
 						foreach($filesToDelete as $fileToDelete) {
 							@unlink($absolutePath . $fileToDelete);
 						}
@@ -78,20 +79,21 @@ class tx_coagohooks {
 	 */
 
 	function processCacheRemove($what, $table, $id, &$thisRef) {
-			
+
+		$confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['coago']);
 		if($confArr['clearOnTablesOperation'] && $table) {
 
 			// selective database cache delete
-			$GLOBALS['TYPO3_DB']->exec_DELETEquery ('cache_hash', 'ident = \'COA_GO_' . $GLOBALS['TYPO3_DB']->fullQuoteStr($table) .'\'');
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery ('cache_hash', 'ident = \'COA_GO_' . $GLOBALS['TYPO3_DB']->quoteStr($table, $table) .'\'');
 
 			// selective file cache delete
 			$confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['coago']);
 			if( !$confArr['cacheDirectory'] ) {
-				$confArr['cacheDirectory'] = $this->defaultCacheDirectory;
+				$confArr['cacheDirectory'] = 'typo3temp/cached_cobj/';
 			}
 
 			if( strlen($confArr['cacheDirectory']) ) {
-				$absolutePath = PATH_site . '/' . $confArr['cacheDirectory'];
+				$absolutePath = PATH_site . $confArr['cacheDirectory'];
 				if( file_exists($absolutePath) ){
 					$filesToDelete = t3lib_div::getFilesInDir($absolutePath);
 					if(is_array($filesToDelete)) {
@@ -105,6 +107,8 @@ class tx_coagohooks {
 			}
 		}
 	}
+	
+	
 }
 
 ?>
